@@ -24,6 +24,11 @@ public class Engine {
 		throw new UnsupportedOperationException();
 	}
 	
+	public EngineStatus getEngineStatus() {
+		//todo:
+		throw new UnsupportedOperationException();
+	}
+	
 	public GridStatus[][] getGridStatus() {
 		//todo:
 		throw new UnsupportedOperationException();
