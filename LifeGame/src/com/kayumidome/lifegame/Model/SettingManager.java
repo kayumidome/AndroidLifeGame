@@ -10,11 +10,11 @@ public class SettingManager {
 	}
 
 	public SettingManager() {
-		//todo:İ’èƒtƒ@ƒCƒ‹‚©‚çî•ñ‚ğ“Ç‚İ‚ñ‚¾‚èAƒtƒ@ƒCƒ‹‚ª‚È‚¯‚ê‚Îì‚Á‚½‚è
+		//todo:è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚“ã ã‚Šã€ãƒ•ã‚¡ã‚¤ãƒ«ãŒãªã‘ã‚Œã°ä½œã£ãŸã‚Šã™ã‚‹ã€‚
 	}
 	
 	public void Save() {
-		//todo:Œ»İ‚Ìİ’è‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶
+		//todo:ç¾åœ¨ã®è¨­å®šã‚’è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã™ã‚‹ã€‚
 	}
 	
 	private Speed speed;
@@ -25,6 +25,6 @@ public class SettingManager {
 	
 	public void setSpeed(Speed speed) {
 		this.speed = speed;
-		//todo:ƒXƒs[ƒh•ÏX‚É”º‚¤ˆ—
+		//todo:ã‚¹ãƒ”ãƒ¼ãƒ‰è¨­å®šå¤‰æ›´ã«ä¼´ã†å‡¦ç†
 	}
 }

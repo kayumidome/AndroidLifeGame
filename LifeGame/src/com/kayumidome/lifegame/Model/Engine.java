@@ -16,7 +16,7 @@ public class Engine {
 		this.xGridSize = xSize;
 		this.yGridSize = ySize;
 		
-		//todo:‰Šúˆ—‚ÌÀ‘•
+		//todo:åˆæœŸå‡¦ç†
 	}
 	
 	public void Dispose() {
