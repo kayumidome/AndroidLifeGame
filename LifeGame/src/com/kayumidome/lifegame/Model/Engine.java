@@ -9,7 +9,39 @@ public class Engine {
 	private final GridUpdateSubject gridUpdateSubject = new GridUpdateSubject();
 	private final AbortSubject abortSubject = new AbortSubject();
 	
-	public Engine() {
+	private final int xGridSize;
+	private final int yGridSize;
+	
+	public Engine(int xSize, int ySize) {
+		this.xGridSize = xSize;
+		this.yGridSize = ySize;
+		
+		//todo:èâä˙èàóùÇÃé¿ëï
+	}
+	
+	public void Dispose() {
+		//todo:
+		throw new UnsupportedOperationException();
+	}
+	
+	public GridStatus[][] getGridStatus() {
+		//todo:
+		throw new UnsupportedOperationException();
+	}
+	
+	public void setGridStatus(GridStatus stat) {
+		//todo:
+		throw new UnsupportedOperationException();
+	}
+	
+	public void Run() {
+		//todo:
+		throw new UnsupportedOperationException();
+	}
+	
+	public void abort() {
+		//todo:
+		throw new UnsupportedOperationException();
 	}
 	
 	public void setStatusUpdateObserver(Observer observer) {
@@ -26,6 +58,14 @@ public class Engine {
 	
 	public void setAbortObserver(Observer observer) {
 		this.abortSubject.addObserver(observer);
+	}
+	
+	public int getXGridSize() {
+		return this.xGridSize;
+	}
+	
+	public int getYGridSize() {
+		return this.yGridSize;
 	}
 	
 	private class StatusUpdateSubject extends Observable {
