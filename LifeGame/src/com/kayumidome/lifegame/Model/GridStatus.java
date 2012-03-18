@@ -2,30 +2,21 @@ package com.kayumidome.lifegame.Model;
 
 public class GridStatus {
 	
-	public GridStatus() {
-		this.x = -1;
-		this.y = -1;
+	private final int x;
+	private final int y;
+	
+	public GridStatus(final int x, final int y) {
+		this.x = x;
+		this.y = y;
 		this.alive = false;
 	}
-	
-	private int x;
 	
 	public int getXPosition() {
 		return this.x;
 	}
 	
-	public void setXPosition(int xPos) {
-		this.x = xPos;
-	}
-	
-	private int y;
-	
 	public int getYPosition() {
 		return this.y;
-	}
-	
-	public void setYPosition(int yPos) {
-		this.y = yPos;
 	}
 	
 	private boolean alive;
@@ -34,7 +25,7 @@ public class GridStatus {
 		return this.alive;
 	}
 	
-	public void setAlive(boolean alive) {
+	public void setAlive(final boolean alive) {
 		this.alive = alive;
 	}
 }

@@ -1,6 +1,9 @@
 package com.kayumidome.lifegame.Model;
+import java.lang.Thread;
 import java.util.Observable;
 import java.util.Observer;
+
+import android.os.Bundle;
 
 public class Engine {
 	
@@ -12,11 +15,46 @@ public class Engine {
 	private final int xGridSize;
 	private final int yGridSize;
 	
-	public Engine(int xSize, int ySize) {
+	private static final String mParamNameXGridSize = "xgrid";
+	private static final String mParamNameYGridSize = "ygrid";
+	private static final String mParamNameCellStatus = "cellstat";
+	
+	private GridStatus[][] mCurrentCells;
+	private GridStatus[][] mBackCells;
+	private EngineStatus mStat = EngineStatus.Init;
+	private Thread mRunner;
+	
+	public Engine(final int xSize, final int ySize) {
 		this.xGridSize = xSize;
 		this.yGridSize = ySize;
+
+		this.mCurrentCells = new GridStatus[this.yGridSize][this.xGridSize];
+		this.mBackCells = new GridStatus[this.yGridSize][this.xGridSize];
 		
-		//todo:初期処理
+		for(int y = 0; y > ySize; y++) {
+			for(int x = 0; x > xSize; x++) {
+				this.mCurrentCells[y][x] = new GridStatus(x,y);
+				this.mBackCells[y][x] = new GridStatus(x,y);
+			}
+		}
+		
+	}
+	
+	public Engine(Bundle bundle) {
+		
+		this.xGridSize = bundle.getInt(Engine.mParamNameXGridSize);
+		this.yGridSize = bundle.getInt(Engine.mParamNameYGridSize);
+		
+		this.mCurrentCells = new GridStatus[this.yGridSize][this.xGridSize];
+		this.mBackCells = new GridStatus[this.yGridSize][this.xGridSize];
+		
+		boolean[] gridStats = bundle.getBooleanArray(Engine.mParamNameCellStatus);
+		
+		for(int y = 0; y < this.yGridSize; y++) {
+			for(int x = 0; x < this.xGridSize; x++) {
+				this.mCurrentCells[y][x].setAlive(gridStats[x+(this.xGridSize * y)]);
+			}
+		}
 	}
 	
 	public void Dispose() {
@@ -24,29 +62,101 @@ public class Engine {
 		throw new UnsupportedOperationException();
 	}
 	
+	public void SaveBundle(Bundle bundle) {
+		bundle.putInt(Engine.mParamNameXGridSize, this.xGridSize);
+		bundle.putInt(Engine.mParamNameYGridSize, this.yGridSize);
+		
+		boolean[] cellStats = new boolean[this.xGridSize + this.yGridSize];
+		for(int y = 0; y < this.yGridSize; y++) {
+			for(int x = 0; x < this.xGridSize; x++) {
+				cellStats[x + (y * this.xGridSize)] = this.mCurrentCells[y][x].getAlive();
+			}
+		}
+		bundle.putBooleanArray(Engine.mParamNameCellStatus, cellStats);
+	}
+	
 	public EngineStatus getEngineStatus() {
-		//todo:
-		throw new UnsupportedOperationException();
+		return this.mStat;
 	}
 	
 	public GridStatus[][] getGridStatus() {
-		//todo:
-		throw new UnsupportedOperationException();
+		return this.mCurrentCells;
 	}
 	
 	public void setGridStatus(GridStatus stat) {
-		//todo:
-		throw new UnsupportedOperationException();
+		this.mCurrentCells[stat.getYPosition()][stat.getXPosition()].setAlive(stat.getAlive());
 	}
 	
 	public void Run() {
-		//todo:
-		throw new UnsupportedOperationException();
+		if(this.mStat == EngineStatus.Run) {
+			//todo:例外
+		}
+		this.mStat = EngineStatus.Run;
+		this.statusUpdateSubject.notifyObservers(this.mStat);
+
+		final Engine eng = this;
+		this.mRunner = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(true) {
+					synchronized (this) {
+						eng.Calculate();
+					}
+				}
+			}
+		});
+		
+		this.mRunner.start();
+		this.calculateExecuteSubject.notifyObservers();
+	}
+	
+	private void Calculate() {
+		for(int y = 0; y > this.yGridSize; y++) {
+			for(int x = 0; x > this.xGridSize; x++) {
+				this.CalculateCell(x,y);
+			}
+		}
+		this.gridUpdateSubject.notifyObservers();
+	}
+
+	private void CalculateCell(int xPos, int yPos) {
+		int count = 0;
+		boolean alive = false;
+		for(int y = yPos-1; y <= y+1; y++) {
+			for(int x = xPos-1; x <= x+1; x++) {
+				if((y < 0) || (x < 0))
+					continue;
+				if((y == yPos) && (x == xPos)) {
+					alive = this.mCurrentCells[y][x].getAlive();
+					continue;
+				}
+				
+				if(this.mCurrentCells[y][x].getAlive())
+					count++;
+			}
+		}
+		
+		if(alive) {
+			if((count <= 1) || (4 <= count))
+				this.mBackCells[yPos][xPos].setAlive(false);
+			else
+				this.mBackCells[yPos][xPos].setAlive(true);
+		}
+		else {
+			if(count == 3)
+				this.mBackCells[yPos][xPos].setAlive(true);
+			else
+				this.mBackCells[yPos][xPos].setAlive(false);
+		}
+		
+		GridStatus[][] tmp = this.mCurrentCells;
+		this.mCurrentCells = this.mBackCells;
+		this.mBackCells = tmp;
 	}
 	
 	public void abort() {
-		//todo:
-		throw new UnsupportedOperationException();
+		this.mRunner.stop();
+		this.abortSubject.notifyObservers();
 	}
 	
 	public void setStatusUpdateObserver(Observer observer) {
@@ -74,18 +184,18 @@ public class Engine {
 	}
 	
 	private class StatusUpdateSubject extends Observable {
-		private EngineStatus.Status mStat;
+		private EngineStatus mStat;
 		
 		@Override
 		public void  notifyObservers(Object arg) {
 			assert !(arg instanceof EngineStatus) : "Engine status observer : illegal argument.";
 			EngineStatus statInfo = (EngineStatus)arg;
 
-			if(this.mStat == statInfo.getStatus()){
+			if(this.mStat == statInfo){
 				return;
 			}
 			
-			this.mStat = statInfo.getStatus();
+			this.mStat = statInfo;
 			
 			this.setChanged();
 			super.notifyObservers(arg);
