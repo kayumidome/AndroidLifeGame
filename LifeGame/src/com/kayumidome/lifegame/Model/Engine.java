@@ -38,6 +38,7 @@ public class Engine {
 			}
 		}
 		
+		this.mStat = EngineStatus.Stop;
 	}
 	
 	public Engine(Bundle bundle) {
@@ -116,7 +117,12 @@ public class Engine {
 				this.CalculateCell(x,y);
 			}
 		}
-		this.gridUpdateSubject.notifyObservers();
+		
+		GridStatus[][] tmp = this.mCurrentCells;
+		this.mCurrentCells = this.mBackCells;
+		this.mBackCells = tmp;
+		
+		this.gridUpdateSubject.notifyObservers(this.mCurrentCells);
 	}
 
 	private void CalculateCell(int xPos, int yPos) {
@@ -148,10 +154,6 @@ public class Engine {
 			else
 				this.mBackCells[yPos][xPos].setAlive(false);
 		}
-		
-		GridStatus[][] tmp = this.mCurrentCells;
-		this.mCurrentCells = this.mBackCells;
-		this.mBackCells = tmp;
 	}
 	
 	public void abort() {
@@ -184,19 +186,11 @@ public class Engine {
 	}
 	
 	private class StatusUpdateSubject extends Observable {
-		private EngineStatus mStat;
 		
 		@Override
 		public void  notifyObservers(Object arg) {
 			assert !(arg instanceof EngineStatus) : "Engine status observer : illegal argument.";
-			EngineStatus statInfo = (EngineStatus)arg;
 
-			if(this.mStat == statInfo){
-				return;
-			}
-			
-			this.mStat = statInfo;
-			
 			this.setChanged();
 			super.notifyObservers(arg);
 			this.clearChanged();
@@ -206,6 +200,7 @@ public class Engine {
 	private class CalculateExecuteSubject extends Observable {
 		@Override
 		public void  notifyObservers(Object arg) {
+			
 			this.setChanged();
 			super.notifyObservers();
 			this.clearChanged();
@@ -215,8 +210,10 @@ public class Engine {
 	private class GridUpdateSubject extends Observable {
 		@Override
 		public void  notifyObservers(Object arg) {
+			assert !(arg instanceof GridStatus[][]) : "Engine grid update observer : illegal argument.";
+			
 			this.setChanged();
-			super.notifyObservers();
+			super.notifyObservers(arg);
 			this.clearChanged();
 		}
 	}
