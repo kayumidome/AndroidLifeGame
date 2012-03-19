@@ -5,6 +5,7 @@ import java.util.Observer;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
@@ -13,13 +14,15 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 
+import com.kayumidome.lifegame.Control.Controller;
 import com.kayumidome.lifegame.Model.*;
 
 public class LifeGameActivity extends Activity {
-	private static int xSize = 10;
+	private static int xSize = 13;
 	private static int ySize = LifeGameActivity.xSize;
 	
 	private Engine mEng = new Engine(LifeGameActivity.xSize, LifeGameActivity.ySize);
+	private Controller mCntl;
 	
     /** Called when the activity is first created. */
     @Override
@@ -27,14 +30,17 @@ public class LifeGameActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        this.mCntl = new Controller(this.mEng);
         Button playbtn = (Button)findViewById(R.id.playbutton);
         playbtn.setOnClickListener(new PlayButtonListener(this.mEng));
-        this.mEng.setStatusUpdateObserver(new EngineStatusChangeObserver());
         this.mEng.setGridUpdateObserver(new GridUpdateObserver());
+        this.mEng.setStatusUpdateObserver(new EngineStatusChangeObserver());
+        this.mEng.setAbortObserver(new EngineAbortObserver(this.mCntl));
+        this.mEng.setCalculateExecuteObserver(new EngineRunObserver(this.mCntl));
         
         GridView grid = (GridView)findViewById(R.id.gridView1);
         grid.setNumColumns(LifeGameActivity.xSize);
-        grid.setAdapter(new EmptyGridCreator(LifeGameActivity.xSize, LifeGameActivity.ySize));
+        grid.setAdapter(new EmptyGridCreator(LifeGameActivity.xSize, LifeGameActivity.ySize, this.mCntl));
     }
     
     class PlayButtonListener implements OnClickListener {
@@ -42,7 +48,6 @@ public class LifeGameActivity extends Activity {
     	private Engine mEng;
     	
     	public PlayButtonListener(Engine eng) {
-    		super();
     		this.mEng = eng;
     	}
     	
@@ -57,104 +62,103 @@ public class LifeGameActivity extends Activity {
 	
 	class EngineStatusChangeObserver implements Observer {
 		
+		private Handler mHdr;
+		
+		public EngineStatusChangeObserver() {
+			this.mHdr = new Handler();
+		}
+		
 		@Override
 		public void update(Observable observable, Object data) {
-			EngineStatus stat = (EngineStatus)data;
-			Button playbtn = (Button)findViewById(R.id.playbutton);
+			final EngineStatus stat = (EngineStatus)data;
 			
-			if(stat == EngineStatus.Run)
-				playbtn.setBackgroundResource(android.R.drawable.ic_media_pause);
-			else
-				playbtn.setBackgroundResource(android.R.drawable.ic_media_play);
+			this.mHdr.post(new Runnable() {
+				@Override
+				public void run() {
+					Button playbtn = (Button)findViewById(R.id.playbutton);
+					if(stat == EngineStatus.Run)
+						playbtn.setBackgroundResource(android.R.drawable.ic_media_pause);
+					else
+						playbtn.setBackgroundResource(android.R.drawable.ic_media_play);
+					}
+				}
+			);
 		}
 	}
 	
 	class EngineRunObserver implements Observer {
+		
+		private Controller mCntl;
+		
+		public EngineRunObserver(Controller cntl) {
+			this.mCntl = cntl;
+		}
 
 		@Override
 		public void update(Observable observable, Object data) {
-			// TODO　グリッドへの入力を受け付けないように
-			
+			this.mCntl.setProhibition(true);
 		}
-		
 	}
 	
 	class EngineAbortObserver implements Observer {
+		private Controller mCntl;
+		
+		public EngineAbortObserver(Controller cntl) {
+			this.mCntl = cntl;
+		}
 
 		@Override
 		public void update(Observable observable, Object data) {
-			// TODO グリッドの入力を受け付けるように
-			
+			this.mCntl.setProhibition(false);
 		}
-		
 	}
 	
 	class GridUpdateObserver implements Observer {
+		
+		private Handler mHdr;
+		
+		public GridUpdateObserver() {
+			this.mHdr = new Handler();
+		}
 
 		@Override
 		public void update(Observable observable, Object data) {
-			GridStatus[][] gridStats = (GridStatus[][])data;
+			final GridStatus[][] gridStats = (GridStatus[][])data;
 			assert gridStats.length != 0;
 			assert gridStats[0].length != 0;
 			
-			GridView grid = (GridView)findViewById(R.id.gridView1);
-			
-			grid.removeAllViews();
-			grid.setAdapter(new GridCreator(gridStats));
+			this.mHdr.post(new Runnable() {
+				@Override
+				public void run() {
+					GridView grid = (GridView)findViewById(R.id.gridView1);
+					
+					for(int y = 0; y < gridStats.length; y++) {
+						for(int x = 0; x < gridStats[0].length; x++) {
+							ImageView img = (ImageView) grid.getChildAt((y*gridStats[0].length)+x);
+							if(gridStats[y][x].getAlive())
+								img.setImageResource(R.drawable.panel_picture_frame_bg_pressed_blue);
+							else
+								img.setImageResource(R.drawable.panel_picture_frame_bg_normal);
+							}
+					}
+				}
+			}
+			);
 		}
-		
-	    public class GridCreator extends BaseAdapter {
-	    	
-	    	private GridStatus[][] mData;
-	    	
-	    	public GridCreator(GridStatus[][] data) {
-	    		this.mData = data;
-	    	}
-	    	
-	    	public View getView(int position, View convertView, ViewGroup parent) {
-	    	    ImageView imageView;
-	    	 
-	    	    if (convertView == null) {
-	    	        imageView = new ImageView(LifeGameActivity.this);
-	    	        imageView.setLayoutParams(new GridView.LayoutParams(50, 50));
-	    	        
-	    	    } else {
-	    	        imageView = (ImageView) convertView;
-	    	    }
-	    	    
-	    	    if(this.mData[(int)position/this.mData.length][position%this.mData.length].getAlive())
-	    	    	imageView.setImageResource(R.drawable.panel_picture_frame_bg_pressed_blue);
-	    	    else
-	    	    	imageView.setImageResource(R.drawable.panel_picture_frame_bg_normal);
-	    	 
-	    	    return imageView;
-	    	}
-
-			@Override
-			public int getCount() {
-				return this.mData.length * this.mData[0].length;
-			}
-
-			@Override
-			public Object getItem(int position) {
-				return position;
-			}
-
-			@Override
-			public long getItemId(int position) {
-				return position;
-			}
-	    }
 	}
 	
 	class EmptyGridCreator extends BaseAdapter {
 
 		private int mX;
 		private int mY;
+		private Controller mCntl;
 		
-		EmptyGridCreator(int x, int y) {
+		EmptyGridCreator(int x, int y, Controller cntl) {
+			super();
+			
 			this.mX = x;
 			this.mY = y;
+			this.mCntl = cntl;
 		}
 		
 		@Override
@@ -178,15 +182,33 @@ public class LifeGameActivity extends Activity {
 	    	 
     	    if (convertView == null) {
     	        imageView = new ImageView(LifeGameActivity.this);
-    	        imageView.setLayoutParams(new GridView.LayoutParams(50, 50));
+    	        imageView.setLayoutParams(new GridView.LayoutParams(40,40));
     	        
     	    } else {
     	        imageView = (ImageView) convertView;
     	    }
     	    
     	    imageView.setImageResource(R.drawable.panel_picture_frame_bg_normal);
+    	    imageView.setOnClickListener(new CellClickListener(position%this.mX, (int)(position/this.mX), this.mCntl));
     	 
     	    return imageView;
+		}
+		
+		private class CellClickListener implements OnClickListener {
+			private int mXPos;
+			private int mYPos;
+			private Controller mCntl;
+			
+			public CellClickListener(int x, int y, Controller cntl) {
+				this.mXPos = x;
+				this.mYPos = y;
+				this.mCntl = cntl;
+			}
+			
+			@Override
+			public void onClick(View v) {
+				this.mCntl.reverseAlive(this.mXPos, this.mYPos);
+			}
 		}
 	}
 }
