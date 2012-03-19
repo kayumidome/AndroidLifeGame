@@ -60,11 +60,6 @@ public class Engine {
 		}
 	}
 	
-	public void Dispose() {
-		//todo:
-		throw new UnsupportedOperationException();
-	}
-	
 	public void SaveBundle(Bundle bundle) {
 		bundle.putInt(Engine.mParamNameXGridSize, this.xGridSize);
 		bundle.putInt(Engine.mParamNameYGridSize, this.yGridSize);
@@ -104,9 +99,9 @@ public class Engine {
 		this.gridUpdateSubject.notifyObservers(this.mCurrentCells);
 	}
 	
-	public void Run() {
+	public void Run() throws EngineStartFailedException {
 		if(this.mStat == EngineStatus.Run) {
-			//todo:例外
+			throw new EngineStartFailedException();
 		}
 
 		this.mCore = new EngineCore(this);
@@ -137,7 +132,7 @@ public class Engine {
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
-						e.printStackTrace();
+						//note:スリープが中断しても全然致命的じゃ無いので無視する。
 					}
 					this.publishProgress(0);
 					if(this.isCancelled() || ret)
@@ -208,6 +203,8 @@ public class Engine {
 	}
 	
 	public void abort() {
+		if(this.mStat == EngineStatus.Stop)
+			return;
 		this.mCore.cancel(true);
 	}
 	

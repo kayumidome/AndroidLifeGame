@@ -18,10 +18,10 @@ import com.kayumidome.lifegame.Control.Controller;
 import com.kayumidome.lifegame.Model.*;
 
 public class LifeGameActivity extends Activity {
-	private static int xSize = 13;
-	private static int ySize = LifeGameActivity.xSize;
+	private static final int xSize = 13;
+	private static final int ySize = LifeGameActivity.xSize;
 	
-	private Engine mEng = new Engine(LifeGameActivity.xSize, LifeGameActivity.ySize);
+	private Engine mEng;
 	private Controller mCntl;
 	
     /** Called when the activity is first created. */
@@ -29,7 +29,8 @@ public class LifeGameActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        
+
+        this.mEng = new Engine(LifeGameActivity.xSize, LifeGameActivity.ySize);
         this.mCntl = new Controller(this.mEng);
         Button playbtn = (Button)findViewById(R.id.playbutton);
         playbtn.setOnClickListener(new PlayButtonListener(this.mEng));
@@ -44,7 +45,6 @@ public class LifeGameActivity extends Activity {
     }
     
     class PlayButtonListener implements OnClickListener {
-
     	private Engine mEng;
     	
     	public PlayButtonListener(Engine eng) {
@@ -53,10 +53,16 @@ public class LifeGameActivity extends Activity {
     	
 		@Override
 		public void onClick(View v) {
-			if(this.mEng.getEngineStatus() == EngineStatus.Stop)
-				this.mEng.Run();
-			else
+			if(this.mEng.getEngineStatus() == EngineStatus.Stop) {
+				try {
+					this.mEng.Run();
+				}catch(EngineStartFailedException exp) {
+					this.mEng.abort();
+				}
+			}
+			else {
 				this.mEng.abort();
+			}
 		}
     }
 	
@@ -142,8 +148,7 @@ public class LifeGameActivity extends Activity {
 							}
 					}
 				}
-			}
-			);
+			});
 		}
 	}
 	

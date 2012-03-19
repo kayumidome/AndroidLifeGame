@@ -4,10 +4,11 @@ import com.kayumidome.lifegame.Model.*;
 
 public class Controller {
 	private Engine mEng;
-	private boolean mProhibition = false;
+	private boolean mProhibition;
 	
 	public Controller(Engine engine) {
 		this.mEng = engine;
+		this.mProhibition = false;
 	}
 	
 	public void setAlive(int x, int y, boolean alive) {
